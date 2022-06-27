@@ -1,6 +1,6 @@
 import { DefaultUi, Player, Youtube } from "@vime/react";
 import { CaretRight, DiscordLogo, FileArrowDown, Lightbulb } from "phosphor-react";
-import { gql, useQuery } from "@apollo/client";
+import { useGetLessonBySlugQuery } from "../graphql/generated";
 
 import '@vime/core/themes/default.css';
 
@@ -10,14 +10,14 @@ interface VideoProps {
 
 export function Video(props: VideoProps) {
 
-    const { data } = useQuery<GetLessonBySlugResponse>(GET_LESSON_BY_SLUG_QUERY, {
+    const { data } = useGetLessonBySlugQuery({
         variables: {
           slug: props.lessonSlug
         },
         fetchPolicy: 'no-cache'
     });
 
-    if (!data) {
+    if (!data || !data.lesson) {
         return (
             <div className="flex-1">
                 <p>Carregando...</p>
@@ -45,15 +45,17 @@ export function Video(props: VideoProps) {
                         <p className="mt-4 text-gray-200 leading-relaxed">
                             {data.lesson.description}
                         </p>
-                        <div className="flex items-center gap-4 mt-6">
-                            <img 
-                                className="h-16 w-16 rounded-full border-2 border-blue-500"
-                                src={data.lesson.teacher.avatarURL} alt="" />
-                            <div className="leading-relaxed">
-                                <strong className="font-bold text-2xl block">{data.lesson.teacher.name}</strong>
-                                <span className="text-gray-200 text-sm block">{data.lesson.teacher.bio}</span>
+                        {data.lesson.teacher && (
+                            <div className="flex items-center gap-4 mt-6">
+                                <img 
+                                    className="h-16 w-16 rounded-full border-2 border-blue-500"
+                                    src={data.lesson.teacher.avatarURL} alt="" />
+                                <div className="leading-relaxed">
+                                    <strong className="font-bold text-2xl block">{data.lesson.teacher.name}</strong>
+                                    <span className="text-gray-200 text-sm block">{data.lesson.teacher.bio}</span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-4">
@@ -104,31 +106,3 @@ export function Video(props: VideoProps) {
         </div>
     )
 };
-
-const GET_LESSON_BY_SLUG_QUERY = gql`
-  query GetLessonBySlug($slug: String) {
-    lesson(where: {slug: $slug}) {
-      title
-      videoId
-      description
-      teacher {
-        name
-        bio
-        avatarURL
-      }
-    }
-  }
-`;
-
-interface GetLessonBySlugResponse {
-  lesson: {
-    title: string;
-    videoId: string;
-    description: string;
-    teacher: {
-      name: string;
-      bio: string;
-      avatarURL: string;
-    }
-  }
-}
